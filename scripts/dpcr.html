@@ -374,6 +374,15 @@ organoids from a single donor.</p>
 <p>The first set of experiments, evaluating “differentiation” media
 published by Ding et al and “patterning” and “maturation” media
 published by He et al were repeated 3 times.</p>
+<pre class="r"><code>experiments &lt;- paste(&quot;organoid5&quot;, &quot;organoid6&quot;, &quot;organoid7&quot;, sep = &quot;|&quot;)
+file_names &lt;- list.files(path = here(&quot;data&quot;, &quot;dpcr&quot;, &quot;raw&quot;),
+                         pattern = experiments)
+file_names</code></pre>
+<pre><code>## [1] &quot;2024_1108_organoid5_allgenes_Results.csv&quot;                    
+## [2] &quot;2024_1209_organoid6_ccl20_rpp30_gp2_Results.csv&quot;             
+## [3] &quot;2024_1219_organoid6_mcell_markers_Results.csv&quot;               
+## [4] &quot;2025_0123_organoid7_mcell_markers_Results.csv&quot;               
+## [5] &quot;2025_0124_organoid7_mcell_marker_polyaltr_repeat_Results.csv&quot;</code></pre>
 </div>
 </div>
 

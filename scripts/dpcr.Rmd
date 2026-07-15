@@ -6,6 +6,10 @@ output:
   html_document:
     keep_md: true
 ---
+```{r setup, message=FALSE, warning=FALSE, include=FALSE}
+library(tidyverse)
+library(here)
+```
 
 # Overview
 In this project, we used digital PCR to measure the expression of M cell marker genes (GP2, SpiB, CCL20), interferon-stimulated genes (ISG15, MX1, IFI6, etc), and TLRs. 
@@ -15,4 +19,12 @@ We initially iterated through several previously published organoid media formul
 # M cell marker expression
 ## Base media comparison
 The first set of experiments, evaluating "differentiation" media published by Ding et al and "patterning" and "maturation" media published by He et al were repeated 3 times.
+
+
+```{r get data}
+experiments <- paste("organoid5", "organoid6", "organoid7", sep = "|")
+file_names <- list.files(path = here("data", "dpcr", "raw"),
+                         pattern = experiments)
+file_names
+```
 
