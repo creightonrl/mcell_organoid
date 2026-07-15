@@ -1,0 +1,10 @@
+---
+title: "Something fascinating"
+author: "Jenny Bryan"
+date: "2025-07-28"
+output:
+  html_document:
+    keep_md: true
+---
+
+# hello world
