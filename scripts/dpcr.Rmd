@@ -45,7 +45,7 @@ for (i in 1:length(file_names)) {
 tidy_data <- bind_rows(data)
 ```
 
-```{r get metadata, message=FALSE}
+```{r get pcr metadata, message=FALSE}
 experiments <- paste("organoid5", "organoid6", "organoid7", sep = "|")
 file_names <- list.files(path = here("data", "dpcr", "metadata"),
                          pattern = experiments)
@@ -62,6 +62,24 @@ for (i in 1:length(file_names)) {
 
 tidy_metadata <- bind_rows(metadata)
 ```
+
+```{r get organoid experiment metadata, message=FALSE}
+experiments <- paste("organoid5", "organoid6", "organoid7", sep = "|")
+file_names <- list.files(path = here("data", "metadata"),
+                         pattern = experiments)
+
+organoid_metadata <- list()
+for (i in 1:length(file_names)) {
+  tmp <- read_csv(here("data", "metadata", file_names[i])) %>%
+    mutate(organoid_experiment = str_extract(file_names[i], "^\\w{9}")) %>%
+    mutate(sample = as.character(sample))
+  
+  organoid_metadata[[i]] <- tmp
+}
+
+tidy_organoid_metadata <- bind_rows(organoid_metadata)
+```
+
 
 ```{r combine data and metadata}
 tidy_full_data <- full_join(tidy_data, tidy_metadata) %>%
@@ -82,5 +100,28 @@ normalized_data <- tidy_full_data %>%
                 .fns = ~ .x / RPP30,
                 .names = "{.col}_norm"))
 
+normalized_data <- full_join(normalized_data, tidy_organoid_metadata) %>%
+  mutate(condition = paste(media, mcell_factors, sep = "_"))
+```
+
+```{r}
+mean_data <- normalized_data %>%
+  group_by(organoid_experiment, condition) %>%
+  summarize(
+    across(
+      ends_with("_norm"),       
+      ~ mean(.x, na.rm = TRUE),
+      .names = "{.col}_mean"
+    ))
+
+ggplot(normalized_data, aes(x = condition, y = GP2_norm, color = organoid_experiment)) +
+    geom_jitter(width = 0.1) +
+    geom_point(data = mean_data, 
+               aes(x = condition, y = GP2_norm_mean), 
+               size = 6, 
+               shape = "\u2014") +
+    scale_y_log10() +
+    theme_classic() +
+    labs(y = "GP2/RPP30")
 ```
 
