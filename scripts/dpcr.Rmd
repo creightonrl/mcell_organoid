@@ -36,7 +36,8 @@ for (i in 1:length(file_names)) {
           green_conc = "Green_Channel_Concentration",
           experiment_name = "experiment_name") %>%
     mutate(chamber = str_sub(chamber, -2)) %>%
-    select(chamber, sample_desc, droplet_num, blue_conc, green_conc, experiment_name)
+    select(chamber, sample_desc, droplet_num, blue_conc, green_conc, experiment_name) %>%
+    pivot_longer(c(blue_conc, green_conc), names_to = "color", names_pattern = "(.*)_conc", values_to = "concentration")
   
   data[[i]] <- tmp
 }
@@ -53,7 +54,8 @@ metadata <- list()
 for (i in 1:length(file_names)) {
   tmp <- readxl::read_xlsx(here("data", "dpcr", "metadata", file_names[i])) %>%
     mutate(experiment_name = str_extract(file_names[i], "^\\d{4}_\\d{4}_\\w{9}")) %>%
-    mutate(sample = as.character(sample))
+    mutate(sample = as.character(sample)) %>%
+    pivot_longer(c(blue, green), names_to = "color", values_to = "gene")
   
   metadata[[i]] <- tmp
 }
@@ -62,8 +64,23 @@ tidy_metadata <- bind_rows(metadata)
 ```
 
 ```{r combine data and metadata}
-tidy_full_data <- full_join(tidy_data, tidy_metadata)
+tidy_full_data <- full_join(tidy_data, tidy_metadata) %>%
+  filter(droplet_num >= 8000) %>%
+  filter_out(sample == "NTC" | sample == "NRT") %>%
+  drop_na() %>%
+  mutate(orig_concentration = concentration * dilution_factor) %>%
+  mutate(organoid_experiment = str_extract(experiment_name, "organoid\\d+$"))
 
 head(tidy_full_data)
+```
+```{r normalize data}
+normalized_data <- tidy_full_data %>%
+  dplyr::select(c(organoid_experiment, sample, orig_concentration, gene)) %>%
+  filter_out(orig_concentration == "Inf") %>%
+  pivot_wider(names_from = gene, values_from = orig_concentration, values_fn = mean) %>%
+  mutate(across(.cols = c("CCL20", "GP2", "SPIB"),
+                .fns = ~ .x / RPP30,
+                .names = "{.col}_norm"))
+
 ```
 
