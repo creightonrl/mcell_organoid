@@ -20,11 +20,50 @@ We initially iterated through several previously published organoid media formul
 ## Base media comparison
 The first set of experiments, evaluating "differentiation" media published by Ding et al and "patterning" and "maturation" media published by He et al were repeated 3 times.
 
-
-```{r get data}
+```{r get data, message=FALSE}
 experiments <- paste("organoid5", "organoid6", "organoid7", sep = "|")
 file_names <- list.files(path = here("data", "dpcr", "raw"),
                          pattern = experiments)
-file_names
+
+data <- list()
+for (i in 1:length(file_names)) {
+  tmp <- read_csv(here("data", "dpcr", "raw", file_names[i])) %>%
+    mutate(experiment_name = str_extract(file_names[i], "^\\d{4}_\\d{4}_\\w{9}")) %>%
+    rename(chamber = "ChamberID",
+          sample_desc = "SampleName",
+          droplet_num = "TotalNumberOfDroplets",
+          blue_conc = "Blue_Channel_Concentration",
+          green_conc = "Green_Channel_Concentration",
+          experiment_name = "experiment_name") %>%
+    mutate(chamber = str_sub(chamber, -2)) %>%
+    select(chamber, sample_desc, droplet_num, blue_conc, green_conc, experiment_name)
+  
+  data[[i]] <- tmp
+}
+
+tidy_data <- bind_rows(data)
+```
+
+```{r get metadata, message=FALSE}
+experiments <- paste("organoid5", "organoid6", "organoid7", sep = "|")
+file_names <- list.files(path = here("data", "dpcr", "metadata"),
+                         pattern = experiments)
+
+metadata <- list()
+for (i in 1:length(file_names)) {
+  tmp <- readxl::read_xlsx(here("data", "dpcr", "metadata", file_names[i])) %>%
+    mutate(experiment_name = str_extract(file_names[i], "^\\d{4}_\\d{4}_\\w{9}")) %>%
+    mutate(sample = as.character(sample))
+  
+  metadata[[i]] <- tmp
+}
+
+tidy_metadata <- bind_rows(metadata)
+```
+
+```{r combine data and metadata}
+tidy_full_data <- full_join(tidy_data, tidy_metadata)
+
+head(tidy_full_data)
 ```
 

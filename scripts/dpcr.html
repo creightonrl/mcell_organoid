@@ -377,12 +377,51 @@ published by He et al were repeated 3 times.</p>
 <pre class="r"><code>experiments &lt;- paste(&quot;organoid5&quot;, &quot;organoid6&quot;, &quot;organoid7&quot;, sep = &quot;|&quot;)
 file_names &lt;- list.files(path = here(&quot;data&quot;, &quot;dpcr&quot;, &quot;raw&quot;),
                          pattern = experiments)
-file_names</code></pre>
-<pre><code>## [1] &quot;2024_1108_organoid5_allgenes_Results.csv&quot;                    
-## [2] &quot;2024_1209_organoid6_ccl20_rpp30_gp2_Results.csv&quot;             
-## [3] &quot;2024_1219_organoid6_mcell_markers_Results.csv&quot;               
-## [4] &quot;2025_0123_organoid7_mcell_markers_Results.csv&quot;               
-## [5] &quot;2025_0124_organoid7_mcell_marker_polyaltr_repeat_Results.csv&quot;</code></pre>
+
+data &lt;- list()
+for (i in 1:length(file_names)) {
+  tmp &lt;- read_csv(here(&quot;data&quot;, &quot;dpcr&quot;, &quot;raw&quot;, file_names[i])) %&gt;%
+    mutate(experiment_name = str_extract(file_names[i], &quot;^\\d{4}_\\d{4}_\\w{9}&quot;)) %&gt;%
+    rename(chamber = &quot;ChamberID&quot;,
+          sample_desc = &quot;SampleName&quot;,
+          droplet_num = &quot;TotalNumberOfDroplets&quot;,
+          blue_conc = &quot;Blue_Channel_Concentration&quot;,
+          green_conc = &quot;Green_Channel_Concentration&quot;,
+          experiment_name = &quot;experiment_name&quot;) %&gt;%
+    mutate(chamber = str_sub(chamber, -2)) %&gt;%
+    select(chamber, sample_desc, droplet_num, blue_conc, green_conc, experiment_name)
+  
+  data[[i]] &lt;- tmp
+}
+
+tidy_data &lt;- bind_rows(data)</code></pre>
+<pre class="r"><code>experiments &lt;- paste(&quot;organoid5&quot;, &quot;organoid6&quot;, &quot;organoid7&quot;, sep = &quot;|&quot;)
+file_names &lt;- list.files(path = here(&quot;data&quot;, &quot;dpcr&quot;, &quot;metadata&quot;),
+                         pattern = experiments)
+
+metadata &lt;- list()
+for (i in 1:length(file_names)) {
+  tmp &lt;- readxl::read_xlsx(here(&quot;data&quot;, &quot;dpcr&quot;, &quot;metadata&quot;, file_names[i])) %&gt;%
+    mutate(experiment_name = str_extract(file_names[i], &quot;^\\d{4}_\\d{4}_\\w{9}&quot;)) %&gt;%
+    mutate(sample = as.character(sample))
+  
+  metadata[[i]] &lt;- tmp
+}
+
+tidy_metadata &lt;- bind_rows(metadata)</code></pre>
+<pre class="r"><code>tidy_full_data &lt;- full_join(tidy_data, tidy_metadata)</code></pre>
+<pre><code>## Joining with `by = join_by(chamber, experiment_name)`</code></pre>
+<pre class="r"><code>head(tidy_full_data)</code></pre>
+<pre><code>## # A tibble: 6 × 10
+##   chamber sample_desc droplet_num blue_conc green_conc experiment_name    sample
+##   &lt;chr&gt;   &lt;chr&gt;             &lt;dbl&gt;     &lt;dbl&gt;      &lt;dbl&gt; &lt;chr&gt;              &lt;chr&gt; 
+## 1 A1      1                 17574     27780       413. 2024_1107_organoi… 1     
+## 2 B1      2                 16871     34116       456. 2024_1107_organoi… 2     
+## 3 C1      3                 16604     35182       441. 2024_1107_organoi… 3     
+## 4 D1      4                 16177     11030       360. 2024_1107_organoi… 4     
+## 5 E1      5                 15347      3945       335. 2024_1107_organoi… 5     
+## 6 F1      6                 15596      5158       272. 2024_1107_organoi… 6     
+## # ℹ 3 more variables: dilution_factor &lt;dbl&gt;, blue &lt;chr&gt;, green &lt;chr&gt;</code></pre>
 </div>
 </div>
 
