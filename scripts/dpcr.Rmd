@@ -7,6 +7,7 @@ output:
     keep_md: true
 ---
 ```{r setup, message=FALSE, warning=FALSE, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
 library(tidyverse)
 library(here)
 ```
@@ -81,17 +82,15 @@ tidy_organoid_metadata <- bind_rows(organoid_metadata)
 ```
 
 
-```{r combine data and metadata}
+```{r combine data and metadata, message=FALSE}
 tidy_full_data <- full_join(tidy_data, tidy_metadata) %>%
   filter(droplet_num >= 8000) %>%
   filter_out(sample == "NTC" | sample == "NRT") %>%
   drop_na() %>%
   mutate(orig_concentration = concentration * dilution_factor) %>%
   mutate(organoid_experiment = str_extract(experiment_name, "organoid\\d+$"))
-
-head(tidy_full_data)
 ```
-```{r normalize data}
+```{r normalize data, message=FALSE}
 normalized_data <- tidy_full_data %>%
   dplyr::select(c(organoid_experiment, sample, orig_concentration, gene)) %>%
   filter_out(orig_concentration == "Inf") %>%
@@ -104,24 +103,55 @@ normalized_data <- full_join(normalized_data, tidy_organoid_metadata) %>%
   mutate(condition = paste(media, mcell_factors, sep = "_"))
 ```
 
-```{r}
+```{r plot data, fig.height=3, fig.width=5, warning=FALSE}
 mean_data <- normalized_data %>%
-  group_by(organoid_experiment, condition) %>%
+  group_by(organoid_experiment, media, condition) %>%
   summarize(
     across(
       ends_with("_norm"),       
       ~ mean(.x, na.rm = TRUE),
-      .names = "{.col}_mean"
-    ))
+      .names = "{.col}_mean"),
+    .groups = "drop_last") %>%
+  mutate(GP2_norm_mean = GP2_norm_mean + 0.0001) %>%
+  mutate(SPIB_norm_mean = SPIB_norm_mean + 0.0001)
 
-ggplot(normalized_data, aes(x = condition, y = GP2_norm, color = organoid_experiment)) +
+plot_data <- normalized_data %>%
+  select(organoid_experiment, sample, CCL20_norm, GP2_norm, SPIB_norm, media, mcell_factors, condition) %>%
+  pivot_longer(c(CCL20_norm, GP2_norm, SPIB_norm), names_to = "gene", values_to = "norm_concentration") %>%
+  mutate(detectable = if_else(norm_concentration == 0, "undetectable", "detectable", "no data")) %>%
+  mutate(norm_concentration = norm_concentration + 0.0001)
+
+ggplot(filter(plot_data, gene == "GP2_norm"), aes(x = condition, y = norm_concentration, color = organoid_experiment)) +
     geom_jitter(width = 0.1) +
     geom_point(data = mean_data, 
                aes(x = condition, y = GP2_norm_mean), 
                size = 6, 
                shape = "\u2014") +
-    scale_y_log10() +
+    scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 1), labels = c(0, 0.001, 0.01, 0.1, 1)) +
+    scale_x_discrete(guide = guide_axis(angle = 45)) +
     theme_classic() +
-    labs(y = "GP2/RPP30")
+    ylab("GP2/RPP30")
+
+ggplot(filter(plot_data, gene == "SPIB_norm"), aes(x = condition, y = norm_concentration, color = organoid_experiment)) +
+    geom_jitter(width = 0.1) +
+    geom_point(data = mean_data, 
+               aes(x = condition, y = SPIB_norm_mean), 
+               size = 6, 
+               shape = "\u2014") +
+    scale_y_log10(breaks = c(0.0001, 0.01, 0.1, 1, 10, 100), labels = c(0, 0.01, 0.1, 1, 10, 100)) +
+    scale_x_discrete(guide = guide_axis(angle = 45)) +
+    theme_classic() +
+    ylab("SPIB/RPP30")
+
+ggplot(filter(plot_data, gene == "CCL20_norm"), aes(x = condition, y = norm_concentration, color = organoid_experiment)) +
+    geom_jitter(width = 0.1) +
+    geom_point(data = mean_data, 
+               aes(x = condition, y = CCL20_norm_mean), 
+               size = 6, 
+               shape = "\u2014") +
+    scale_y_log10(limits = c(1, 1000)) +
+    scale_x_discrete(guide = guide_axis(angle = 45)) +
+    theme_classic() +
+    ylab("CCL20/RPP30")
 ```
 
