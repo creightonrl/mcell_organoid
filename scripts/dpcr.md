@@ -45,14 +45,23 @@ We prioritized patterning media in future experiments because it gave the most c
 
 
 
+![](dpcr_files/figure-html/LT wash plots-1.png)<!-- -->![](dpcr_files/figure-html/LT wash plots-2.png)<!-- -->![](dpcr_files/figure-html/LT wash plots-3.png)<!-- -->
 
-
-![](dpcr_files/figure-html/unnamed-chunk-6-1.png)<!-- -->![](dpcr_files/figure-html/unnamed-chunk-6-2.png)<!-- -->![](dpcr_files/figure-html/unnamed-chunk-6-3.png)<!-- -->
-
-M cell markers are expressed following differentiation with LTa2b1 in 4 different donors, and the M cell marker expression is maintained even when the differentiation media is replaced with differention media without LTa2b1 for the last 48 hours. This is important for the M cell project because LTa2b1 strongly reactivates HIV in J-Lat and U1 cell lines.  
+M cell markers are expressed following differentiation with LTa2b1 in 4 different donors, and the M cell marker expression is maintained even when the differentiation media is replaced with differentiation media without LTa2b1 for the last 48 hours. This is important for the M cell project because LTa2b1 strongly reactivates HIV in J-Lat and U1 cell lines.  
 
 ## Alternatives to LTa2b1
 ### Experiments 10 and 11
+
+
+
+
+
+
+
+
+![](dpcr_files/figure-html/alt LT plots-1.png)<!-- -->![](dpcr_files/figure-html/alt LT plots-2.png)<!-- -->![](dpcr_files/figure-html/alt LT plots-3.png)<!-- -->
+
+Alternative lymphotoxin beta receptor agonists result in similar M cell marker expression compared to LTa2b1, which could act through the TNF receptor or the lymphotoxin beta receptor. LTa1b2 was prioritized in following experiments because it gave similar M cell marker expression as LTa2b1, but did not reactivate HIV in J-Lat or U1.  
 
 ## Organoid stimulation
 ### Experiments 12 and 13
