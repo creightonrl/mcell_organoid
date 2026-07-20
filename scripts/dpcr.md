@@ -29,3 +29,17 @@ The first set of experiments, evaluating "differentiation" media published by Di
 
 ![](dpcr_files/figure-html/plot data-1.png)<!-- -->![](dpcr_files/figure-html/plot data-2.png)<!-- -->![](dpcr_files/figure-html/plot data-3.png)<!-- -->
 
+Alternatively, data can be plotted with media formulation on the x axis and colored based on the inclusion of M cell factors. Here, the data points represent the mean of technical replicates from three independent experiments.  
+![](dpcr_files/figure-html/additional plot options-1.png)<!-- -->![](dpcr_files/figure-html/additional plot options-2.png)<!-- -->![](dpcr_files/figure-html/additional plot options-3.png)<!-- -->
+
+
+We prioritized patterning media in future experiments because it gave the most consistent increases in GP2 and SPIB expression.
+
+## Lymphotoxin wash
+### Experiments 8 and 9
+
+## Alternatives to LTa2b1
+### Experiments 10 and 11
+
+## Organoid stimulation
+### Experiments 12 and 13

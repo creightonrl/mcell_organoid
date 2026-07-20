@@ -47,7 +47,6 @@ tidy_data <- bind_rows(data)
 ```
 
 ```{r get pcr metadata, message=FALSE}
-experiments <- paste("organoid5", "organoid6", "organoid7", sep = "|")
 file_names <- list.files(path = here("data", "dpcr", "metadata"),
                          pattern = experiments)
 
@@ -65,7 +64,6 @@ tidy_metadata <- bind_rows(metadata)
 ```
 
 ```{r get organoid experiment metadata, message=FALSE}
-experiments <- paste("organoid5", "organoid6", "organoid7", sep = "|")
 file_names <- list.files(path = here("data", "metadata"),
                          pattern = experiments)
 
@@ -81,7 +79,6 @@ for (i in 1:length(file_names)) {
 tidy_organoid_metadata <- bind_rows(organoid_metadata)
 ```
 
-
 ```{r combine data and metadata, message=FALSE}
 tidy_full_data <- full_join(tidy_data, tidy_metadata) %>%
   filter(droplet_num >= 8000) %>%
@@ -90,6 +87,7 @@ tidy_full_data <- full_join(tidy_data, tidy_metadata) %>%
   mutate(orig_concentration = concentration * dilution_factor) %>%
   mutate(organoid_experiment = str_extract(experiment_name, "organoid\\d+$"))
 ```
+
 ```{r normalize data, message=FALSE}
 normalized_data <- tidy_full_data %>%
   dplyr::select(c(organoid_experiment, sample, orig_concentration, gene)) %>%
@@ -105,7 +103,7 @@ normalized_data <- full_join(normalized_data, tidy_organoid_metadata) %>%
 
 ```{r plot data, fig.height=3, fig.width=5, warning=FALSE}
 mean_data <- normalized_data %>%
-  group_by(organoid_experiment, media, condition) %>%
+  group_by(organoid_experiment, media, mcell_factors, condition) %>%
   summarize(
     across(
       ends_with("_norm"),       
@@ -155,3 +153,41 @@ ggplot(filter(plot_data, gene == "CCL20_norm"), aes(x = condition, y = norm_conc
     ylab("CCL20/RPP30")
 ```
 
+Alternatively, data can be plotted with media formulation on the x axis and colored based on the inclusion of M cell factors. Here, the data points represent the mean of technical replicates from three independent experiments.  
+```{r additional plot options, fig.height=3, fig.width=5}
+ggplot(mean_data, aes(x = media, y = GP2_norm_mean, color = mcell_factors)) +
+    geom_jitter(width = 0.1) +
+    stat_summary(fun = mean, geom = "point", shape = "\u2014", size = 6) +
+    scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 1), labels = c(0, 0.001, 0.01, 0.1, 1)) +
+    scale_x_discrete(guide = guide_axis(angle = 45)) +
+    theme_classic() +
+    ylab("GP2/RPP30")
+
+ggplot(mean_data, aes(x = media, y = SPIB_norm_mean, color = mcell_factors)) +
+    geom_jitter(width = 0.1) +
+    stat_summary(fun = mean, geom = "point", shape = "\u2014", size = 6) +
+    scale_y_log10(breaks = c(0.0001, 0.01, 0.1, 1, 10, 100), labels = c(0, 0.01, 0.1, 1, 10, 100)) +
+    scale_x_discrete(guide = guide_axis(angle = 45)) +
+    theme_classic() +
+    ylab("SPIB/RPP30")
+
+ggplot(mean_data, aes(x = media, y = CCL20_norm_mean, color = mcell_factors)) +
+    geom_jitter(width = 0.1) +
+    stat_summary(fun = mean, geom = "point", shape = "\u2014", size = 6) +
+    scale_y_log10(limits = c(1, 1000)) +
+    scale_x_discrete(guide = guide_axis(angle = 45)) +
+    theme_classic() +
+    ylab("CCL20/RPP30")
+```
+
+
+We prioritized patterning media in future experiments because it gave the most consistent increases in GP2 and SPIB expression.
+
+## Lymphotoxin wash
+### Experiments 8 and 9
+
+## Alternatives to LTa2b1
+### Experiments 10 and 11
+
+## Organoid stimulation
+### Experiments 12 and 13
