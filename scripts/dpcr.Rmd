@@ -154,7 +154,7 @@ ggplot(filter(plot_data, gene == "CCL20_norm"), aes(x = condition, y = norm_conc
 ```
 
 Alternatively, data can be plotted with media formulation on the x axis and colored based on the inclusion of M cell factors. Here, the data points represent the mean of technical replicates from three independent experiments.  
-```{r additional plot options, fig.height=3, fig.width=5}
+```{r additional plot options, fig.height=3, fig.width=4}
 ggplot(mean_data, aes(x = media, y = GP2_norm_mean, color = mcell_factors)) +
     geom_jitter(width = 0.1) +
     stat_summary(fun = mean, geom = "point", shape = "\u2014", size = 6) +
@@ -185,6 +185,115 @@ We prioritized patterning media in future experiments because it gave the most c
 
 ## Lymphotoxin wash
 ### Experiments 8 and 9
+```{r, message=FALSE}
+experiments <- paste("organoid8", "organoid9", sep = "|")
+file_names <- list.files(path = here("data", "dpcr", "raw"),
+                         pattern = experiments)
+
+data <- list()
+for (i in 1:length(file_names)) {
+  tmp <- read_csv(here("data", "dpcr", "raw", file_names[i])) %>%
+    mutate(experiment_name = str_extract(file_names[i], "^\\d{4}_\\d{4}_\\w{9}")) %>%
+    rename(chamber = "ChamberID",
+          sample_desc = "SampleName",
+          droplet_num = "TotalNumberOfDroplets",
+          blue_conc = "Blue_Channel_Concentration",
+          green_conc = "Green_Channel_Concentration",
+          experiment_name = "experiment_name") %>%
+    mutate(chamber = str_sub(chamber, -2)) %>%
+    select(chamber, sample_desc, droplet_num, blue_conc, green_conc, experiment_name) %>%
+    pivot_longer(c(blue_conc, green_conc), names_to = "color", names_pattern = "(.*)_conc", values_to = "concentration")
+  
+  data[[i]] <- tmp
+}
+
+tidy_data <- bind_rows(data)
+```
+
+```{r, message=FALSE}
+experiments <- paste("organoid8", "organoid9", sep = "|")
+file_names <- list.files(path = here("data", "dpcr", "metadata"),
+                         pattern = experiments)
+
+metadata <- list()
+for (i in 1:length(file_names)) {
+  tmp <- readxl::read_xlsx(here("data", "dpcr", "metadata", file_names[i])) %>%
+    mutate(experiment_name = str_extract(file_names[i], "^\\d{4}_\\d{4}_\\w{9}")) %>%
+    mutate(sample = as.character(sample)) %>%
+    pivot_longer(c(blue, green), names_to = "color", values_to = "gene")
+  
+  metadata[[i]] <- tmp
+}
+
+tidy_metadata <- bind_rows(metadata)
+```
+
+```{r, message=FALSE}
+experiments <- paste("organoid8", "organoid9", sep = "|")
+file_names <- list.files(path = here("data", "metadata"),
+                         pattern = experiments)
+
+organoid_metadata <- list()
+for (i in 1:length(file_names)) {
+  tmp <- read_csv(here("data", "metadata", file_names[i])) %>%
+    mutate(organoid_experiment = str_extract(file_names[i], "^\\w{9}")) %>%
+    mutate(sample = as.character(sample))
+  
+  organoid_metadata[[i]] <- tmp
+}
+
+tidy_organoid_metadata <- bind_rows(organoid_metadata)
+```
+
+```{r, message=FALSE}
+tidy_full_data <- full_join(tidy_data, tidy_metadata) %>%
+  filter(droplet_num >= 8000) %>%
+  filter_out(sample == "NTC" | sample == "NRT") %>%
+  drop_na() %>%
+  mutate(orig_concentration = concentration * dilution_factor) %>%
+  mutate(organoid_experiment = str_extract(experiment_name, "organoid\\d+$"))
+```
+
+```{r, message=FALSE}
+normalized_data <- tidy_full_data %>%
+  dplyr::select(c(organoid_experiment, sample, orig_concentration, gene)) %>%
+  filter_out(orig_concentration == "Inf") %>%
+  pivot_wider(names_from = gene, values_from = orig_concentration, values_fn = mean) %>%
+  mutate(across(.cols = c("CCL20", "GP2", "SPIB"),
+                .fns = ~ .x / RPP30,
+                .names = "{.col}_norm"))
+
+normalized_data <- full_join(normalized_data, tidy_organoid_metadata) 
+```
+
+```{r, fig.height=2.5, fig.width=3.5, warning=FALSE}
+
+ggplot(normalized_data, aes(x = mcell_factors, y = GP2_norm)) +
+    geom_jitter(width = 0.1, aes(color = donor)) +
+    stat_summary(fun = mean, geom = "point", shape = "\u2014", size = 6) +
+    scale_y_log10(breaks = c(0.0001, 0.001, 0.01, 0.1, 1), labels = c(0, 0.001, 0.01, 0.1, 1)) +
+    scale_x_discrete(guide = guide_axis(angle = 45)) +
+    theme_classic() +
+    ylab("GP2/RPP30")
+
+ggplot(normalized_data, aes(x = mcell_factors, y = SPIB_norm)) +
+    geom_jitter(width = 0.1, aes(color = donor)) +
+    stat_summary(fun = mean, geom = "point", shape = "\u2014", size = 6) +
+    scale_y_log10(breaks = c(0.0001, 0.01, 0.1, 1, 10, 100), labels = c(0, 0.01, 0.1, 1, 10, 100)) +
+    scale_x_discrete(guide = guide_axis(angle = 45)) +
+    theme_classic() +
+    ylab("SPIB/RPP30")
+
+ggplot(normalized_data, aes(x = mcell_factors, y = CCL20_norm)) +
+    geom_jitter(width = 0.1, aes(color = donor)) +
+    stat_summary(fun = mean, geom = "point", shape = "\u2014", size = 6) +
+    scale_y_log10(limits = c(1, 1000)) +
+    scale_x_discrete(guide = guide_axis(angle = 45)) +
+    theme_classic() +
+    ylab("CCL20/RPP30")
+```
+
+M cell markers are expressed following differentiation with LTa2b1 in 4 different donors, and the M cell marker expression is maintained even when the differentiation media is replaced with differention media without LTa2b1 for the last 48 hours. This is important for the M cell project because LTa2b1 strongly reactivates HIV in J-Lat and U1 cell lines.  
 
 ## Alternatives to LTa2b1
 ### Experiments 10 and 11
